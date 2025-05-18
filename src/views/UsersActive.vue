@@ -2,7 +2,7 @@
   <main>
     <h1>График активных пользователей</h1>
     <section>
-      <Doughnut class="chart" :options="options" :data="chartData" :key="1" />
+      <Line style="width: 50%; height: 400px" class="chart" :options :data="chartData" />
     </section>
   </main>
 </template>
@@ -10,32 +10,63 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getActiveUsers } from '@/api/getActiveUsers'
-import { Doughnut } from 'vue-chartjs'
-import { ArcElement, Chart as ChartJS, Legend, Tooltip } from 'chart.js'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  LineController,
+} from 'chart.js'
+import type { ChartData } from 'chart.js'
 
-const activeUsers = ref([])
+ChartJS.register(
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  LineController,
+)
 
-onMounted(async () => {
-  await getActiveUsers().then((response) => {
-    console.log('response', response)
-  })
+const chartData = ref<ChartData<'line'>>({
+  labels: [],
+  datasets: [],
 })
+onMounted(async () => {
+  const response = await getActiveUsers()
 
-ChartJS.register(Tooltip, Legend, ArcElement)
+  const countsByDate: Record<string, number> = {}
 
-const chartData = ref({
-  labels: ['3', '435'],
-  datasets: [
-    {
-      backgroundColor: ['#242424', '#bc0ce8'],
-      data: [5, 6],
-    },
-  ],
+  response?.forEach((item) => {
+    const date = item.time.split(' ')[0]
+    countsByDate[date] = (countsByDate[date] || 0) + 1
+  })
+
+  const labelsData = Object.keys(countsByDate)
+  const usersData = Object.values(countsByDate)
+
+  chartData.value = {
+    labels: labelsData,
+    datasets: [
+      {
+        label: 'Активные пользователи',
+        data: usersData,
+        borderColor: 'red',
+        tension: 0.1,
+        fill: false,
+      },
+    ],
+  }
 })
 
 const options = {
   responsive: true,
-  maintainAspectRatio: false,
+  maintainAspectRatio: true,
 }
 </script>
 
@@ -43,5 +74,10 @@ const options = {
 main {
   padding-left: 15%;
   padding-top: 1%;
+}
+
+.chart {
+  height: 200px;
+  width: 200px;
 }
 </style>

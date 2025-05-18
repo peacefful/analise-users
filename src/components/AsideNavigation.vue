@@ -21,6 +21,7 @@ aside {
   border-radius: 30px;
   height: 100vh;
   position: fixed;
+  z-index: 100;
 }
 
 li {
